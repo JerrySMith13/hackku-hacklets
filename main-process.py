@@ -15,10 +15,24 @@ def main():
     res = wizard.cast_spell(transcript)
     res = merlin.MerlinClient.parse_spell_to_response(res)
     
-    print(res.commands)
-    print(res.line_by_line)
+    run = exec.run_response(res)
+    while run[0] != exec.RunSignal.EXIT_SUCCESSFUL:
+        if run[0] == exec.RunSignal.FIX_ERR_WITH_MERLIN:
+            # Handle the error with Merlin
+            err = run[1]
+            res = wizard.handle_err(err)
+            res = merlin.MerlinClient.parse_spell_to_response(res)
+            run = exec.run_response(res)
+        elif run[0] == exec.RunSignal.EXIT_ABORTED:
+            print("Execution aborted by user.")
+            return
+        else:
+            print("An unknown error occurred.")
+            return
     
-    print(exec.run_response(res))
+    
+    
+    
     
    
     

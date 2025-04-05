@@ -2,7 +2,7 @@ import subprocess
 from merlin import Response
 from enum import Enum
 import os
-    
+from errorstuff import Err
 def block_until_key(signal) -> bool:
     if input() == signal:
         return False
@@ -14,12 +14,6 @@ class RunSignal(Enum):
     EXIT_UNSUCCESSFUL = 1
     FIX_ERR_WITH_MERLIN = 2
     EXIT_ABORTED = 3
-    
-class Err:
-    def __init__(self, command, err, out):
-        self.command = command
-        self.err = err
-        self.out = out
         
 def run_response(res: Response, checkBeforeExecution: bool=False) -> tuple[RunSignal, ]:
     process_path = os.getcwd()
@@ -46,6 +40,7 @@ def run_response(res: Response, checkBeforeExecution: bool=False) -> tuple[RunSi
                 return (RunSignal.EXIT_UNSUCCESSFUL, None)
             else:
                 return (RunSignal.FIX_ERR_WITH_MERLIN, Err(command, errmsg, out))
+        print(result.stdout.decode('utf-8') if hasattr(result.stdout, 'decode') else str(result.stdout))
                    
     return (RunSignal.EXIT_SUCCESSFUL, None)
             

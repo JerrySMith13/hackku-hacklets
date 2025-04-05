@@ -3,6 +3,7 @@ import os
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
+from errorstuff import Err
 
 class Response(BaseModel):
     intro: str
@@ -21,6 +22,12 @@ class MerlinClient:
         self.history = []
         
     
+    def handle_err(self, error: Err):
+        return self.cast_spell(
+            f"Fix the error that happened while running the command '{error.command}'. The error was: {error.err.decode('utf-8') if hasattr(error.err, 'decode') else str(error.err)}. The output was: {error.out.decode('utf-8') if hasattr(error.out, 'decode') else str(error.out)}"
+        )
+        
+        
     def cast_spell(self, prompt: str):
         model = "gemini-2.0-flash"
         contents =[
