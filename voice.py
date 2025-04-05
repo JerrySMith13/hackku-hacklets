@@ -1,49 +1,26 @@
 import whisper
-import pyaudio
+import sounddevice as sd
 import numpy as np
 
-# Initialize the real-time transcription system (using the default model)
-model = whisper.load_model("base")
+print(sd.query_devices())
 
-# Define audio parameters
-RATE = 16000  # Sample rate (16kHz)
-CHUNK = 1024  # Number of audio frames per buffer
-FORMAT = pyaudio.paInt16  # Format for audio input (16-bit)
-CHANNELS = 1  # Mono audio
+sd.default.device = 18
 
-# Set up PyAudio for capturing microphone input
-p = pyaudio.PyAudio()
+sample_rate = sd.default.samplerate  # Use the default sample rate of the device
+if sample_rate is None:
+    sample_rate = 16000  # Fallback to a default sample rate if not set
 
-print(f"Device count:{p.get_default_input_device_info()}")  # This will list the number of audio devices available, can be used for debugging
+def record_audio(duration=5):
+    """
+    Record audio from the microphone for a given duration.
+    
+    :param duration: Duration in seconds to record audio.
+    :return: Recorded audio as a NumPy array.
+    """
+    print(f"Recording for {duration} seconds...")
+    audio_data = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype='float32')
+    sd.wait()  # Wait until recording is finished
+    print("Recording complete.")
+    return audio_data  
 
-# Open the microphone stream
-stream = p.open(format=FORMAT,
-                channels=CHANNELS,
-                rate=RATE,
-                input=True,
-                frames_per_buffer=CHUNK)
-
-print("Start speaking...")
-
-try:
-    while True:
-        # Capture audio data from the microphone
-        audio_data = stream.read(CHUNK)
-
-        # Convert audio data to a numpy array (required by realTimeSTT)
-        audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
-
-        # Perform speech-to-text on the audio chunk
-        transcript = model.transcribe(audio_array)  # You can specify the language here, e.g., 'en' for English
-
-        # Print the transcription result if any
-        if transcript:
-            print(f"Transcript: {transcript.get('text')}")
-
-except KeyboardInterrupt:
-    print("\nTerminating transcription...")
-finally:
-    # Close the microphone stream and PyAudio
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+sd.play(record_audio(5), samplerate=sample_rate, blocking=True)  # Record and play back for 5 seconds
