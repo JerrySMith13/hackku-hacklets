@@ -16,7 +16,8 @@ class RunSignal(Enum):
     EXIT_ABORTED = 3
         
 def run_response(res: Response, checkBeforeExecution: bool=False) -> tuple[RunSignal, ]:
-    process_path = os.getcwd()
+
+    current_dir = os.getcwd()
     
     print(res.intro + "\n")
     for i in range(len(res.commands)):
@@ -29,7 +30,23 @@ def run_response(res: Response, checkBeforeExecution: bool=False) -> tuple[RunSi
             
         print(f"Current command: {message}")
         block_until_key("")
-        result = subprocess.run(command, shell=True, check=False, capture_output=True, cwd=os.getcwd())
+        
+        if 'cd' in command.strip():
+            try:
+                # Extract the target directory
+                target_dir = command.split('cd ', 1)[1].strip()
+                # Handle relative paths
+                new_dir = os.path.join(current_dir, target_dir)
+                # Update and change to new directory
+                os.chdir(new_dir)
+                current_dir = os.getcwd()
+                print(f"Changed directory to: {current_dir}")
+                continue
+            except Exception as e:
+                print(f"Error changing directory: {e}")
+                return (RunSignal.FIX_ERR_WITH_MERLIN, Err(command, str(e), ""))
+        
+        result = subprocess.run(command, shell=True, check=False, capture_output=True, cwd=current_dir)
         if result.returncode != 0:
             errmsg = result.stderr
             out = result.stdout
