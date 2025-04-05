@@ -39,6 +39,7 @@ def cast_spell(prompt: str):
         if chunk.text:
             return chunk.text
 
+
 if __name__ == "__main__":
     print(cast_spell("Hello, Merlin!"))
     

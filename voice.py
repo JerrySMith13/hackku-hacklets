@@ -14,6 +14,8 @@ CHANNELS = 1  # Mono audio
 # Set up PyAudio for capturing microphone input
 p = pyaudio.PyAudio()
 
+print(f"Device count:{p.get_default_input_device_info()}")  # This will list the number of audio devices available, can be used for debugging
+
 # Open the microphone stream
 stream = p.open(format=FORMAT,
                 channels=CHANNELS,
