@@ -39,8 +39,4 @@ def cast_spell(prompt: str):
     )
     
     return res
-        
-    
-if __name__ == "__main__":
-    print(cast_spell("Create a project directory called new-project, and create a file in it called hello.txt with the text 'Hello, World!' inside it."))
-    
+          
