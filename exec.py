@@ -1,25 +1,58 @@
 import subprocess
+from merlin import Response
+from enum import Enum
+import os
+    
+def block_until_key(signal) -> bool:
+    if input() == signal:
+        return False
+    else:
+        return True
 
-def execute_command(command):
-    """
-    Executes a shell command and returns the output.
+class RunSignal(Enum):
+    EXIT_SUCCESSFUL = 0
+    EXIT_UNSUCCESSFUL = 1
+    FIX_ERR_WITH_MERLIN = 2
+    EXIT_ABORTED = 3
     
-    :param command: The command to execute as a string or list of strings.
-    :return: The output of the command as a string.
-    """
-    try:
-        result = subprocess.run(command, shell=True, check=True, text=True, capture_output=True)
-        return result.stdout
-    except subprocess.CalledProcessError as e:
-        return f"Error: {e.stderr}"
+class Err:
+    def __init__(self, command, err, out):
+        self.command = command
+        self.err = err
+        self.out = out
+        
+def run_response(res: Response, checkBeforeExecution: bool=False) -> tuple[RunSignal, ]:
+    process_path = os.getcwd()
     
+    print(res.intro + "\n")
+    for i in range(len(res.commands)):
+        command = res.commands[i]
+        message = res.line_by_line[i]
+        if checkBeforeExecution:
+            print("Ok to run '{}'? (press 'N' key to abort)")
+            if not block_until_key('N'):
+                return (RunSignal.EXIT_ABORTED)
+            
+        print(f"Current command: {message}")
+        block_until_key("")
+        result = subprocess.run(command, shell=True, check=False, capture_output=True, cwd=os.getcwd())
+        if result.returncode != 0:
+            errmsg = result.stderr
+            out = result.stdout
+            print("Error happened while running the following command:")
+            print(command)
+            print("Would you like Merlin to fix it? (press N for no)")
+            if not block_until_key('N'):
+                return (RunSignal.EXIT_UNSUCCESSFUL, None)
+            else:
+                return (RunSignal.FIX_ERR_WITH_MERLIN, Err(command, errmsg, out))
+                   
+    return (RunSignal.EXIT_SUCCESSFUL, None)
+            
+                    
+                        
+                
+                    
+            
+            
     
-def main():
-    # Example usage
-    command = ["ls", "cd .venv"]  # Replace with your desired command
-    output = execute_command(command)
-    print(output)
-    
-    
-if __name__ == "__main__":
-    main()
