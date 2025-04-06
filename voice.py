@@ -32,25 +32,33 @@ def transcribe_audio(model, audio_data):
     result = model.transcribe(audio_data, language='en')
     return result['text']
 
-def wait_for_silence(model, interval):
+def wait_for_silence(model, interval, threshold=0.7, silence_duration=2):
     """
-    Wait for silence in the audio stream.
+    Wait for silence in the audio stream and stop recording.
     
-    :param threshold: Silence threshold.
-    :param interval: Time interval to check for silence.
+    :param model: Whisper model for transcription
+    :param interval: Time interval to check for silence (in seconds)
+    :param threshold: Silence threshold (amplitude below this is considered silence)
+    :param silence_duration: Duration of silence required to stop (in seconds)
+    :return: Transcribed text from the recording
     """
     frames = []
+    silence_count = 0
     print("Starting recording...")
-    while True:
-        try:
-            audio_data = record_audio(duration=interval)
-        except KeyboardInterrupt:
-            break
-        frames.append(audio_data)
-    return transcribe_audio(model, np.concatenate(frames))
     
-
-if __name__ == "__main__":
-    model = whisper.load_model("base")  # Load the Whisper model
-    interval = 2  # Set the time interval for transcription
-    print(wait_for_silence(model, interval))
+    while True:
+        audio_data = record_audio(duration=interval)
+        frames.append(audio_data)
+        
+        # Calculate RMS amplitude of the current audio chunk
+        rms = np.sqrt(np.mean(np.square(audio_data)))
+        
+        if rms < threshold:
+            silence_count += interval
+            if silence_count >= silence_duration:
+                print("Silence detected, stopping recording...")
+                break
+        else:
+            silence_count = 0
+    
+    return transcribe_audio(model, np.concatenate(frames))

@@ -1,8 +1,8 @@
 import subprocess
-from merlin import Response
+from merlin import Response, MerlinClient
 from enum import Enum
 import os
-from errorstuff import Err
+from errorstuff import Err, LogCommandOutput
 def block_until_key(signal) -> bool:
     if input() == signal:
         return False
@@ -15,9 +15,10 @@ class RunSignal(Enum):
     FIX_ERR_WITH_MERLIN = 2
     EXIT_ABORTED = 3
         
-def run_response(res: Response, checkBeforeExecution: bool=False) -> tuple[RunSignal, ]:
+def run_response(res: Response, client: MerlinClient, prompt: str, checkBeforeExecution: bool=False) -> tuple[RunSignal, ]:
 
     current_dir = os.getcwd()
+    command_results: list[tuple[str, str]] = []
     
     print(res.intro + "\n")
     for i in range(len(res.commands)):
@@ -57,8 +58,15 @@ def run_response(res: Response, checkBeforeExecution: bool=False) -> tuple[RunSi
                 return (RunSignal.EXIT_UNSUCCESSFUL, None)
             else:
                 return (RunSignal.FIX_ERR_WITH_MERLIN, Err(command, errmsg, out))
-        print(result.stdout.decode('utf-8') if hasattr(result.stdout, 'decode') else str(result.stdout))
-                   
+        
+        command_output = result.stdout.decode('utf-8') if hasattr(result.stdout, 'decode') else str(result.stdout)
+        print(command_output)
+        command_results.append((command, command_output))
+
+        
+    print(res.conclusion, end='\n\n')
+    logobj = LogCommandOutput((prompt, res.intro, res.conclusion), command_results)
+    client.add_to_history(logobj)
     return (RunSignal.EXIT_SUCCESSFUL, None)
             
                     
