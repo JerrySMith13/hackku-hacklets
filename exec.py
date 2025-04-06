@@ -29,8 +29,9 @@ def run_response(res: Response, client: MerlinClient, prompt: str, checkBeforeEx
             if not block_until_key('N'):
                 return (RunSignal.EXIT_ABORTED)
             
-        print(f"Current command: {message}")
-        block_until_key("")
+        print(f"Current command: {message} | Would you like to run it? (press 'N' to skip, 'Enter' to run)")
+        if not block_until_key("N"):
+            continue  # Skip this command if 'N' is pressed
         
         if 'cd' in command.strip():
             try:

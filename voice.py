@@ -5,7 +5,6 @@ import gc
 
 model = whisper.load_model("base")  # Load the Whisper model
 
-sd.default.device = 18
 sd.default.dtype = 'float16'  # Set the default data type for recording
 sample_rate = sd.default.samplerate = 16000  # Set the default sample rate for recording
 
